@@ -17,7 +17,15 @@ const __dirname = path.dirname(__filename)
 const app = express()
 const PORT = process.env.PORT || 4000
 
-app.use(cors())
+// CORS configuration for separate frontend/backend deployment
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://mini-google-ai-search-engine-myrix-2.onrender.com',
+    /\.onrender\.com$/
+  ],
+  credentials: true
+}))
 app.use(express.json())
 
 // API Routes
