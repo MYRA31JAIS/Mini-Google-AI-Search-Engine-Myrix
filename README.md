@@ -200,7 +200,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact
 
-**Myra Jain**
+**Myra Jaiswal**
 - GitHub: [@MYRA31JAIS](https://github.com/MYRA31JAIS)
 - Repository: [Mini-Google-AI-Search-Engine-Myrix](https://github.com/MYRA31JAIS/Mini-Google-AI-Search-Engine-Myrix)
 
@@ -210,6 +210,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **⭐ Star this repo if you find it helpful!**
 
-Made with ❤️ and ☕ by Myra Jain
+Made with ❤️ and ☕ by Myra Jaiswal
 
 </div>
