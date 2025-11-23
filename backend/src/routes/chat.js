@@ -1,5 +1,6 @@
 import express from 'express'
 import { aiService } from '../services/aiService.js'
+import { openaiService } from '../services/openaiService.js'
 
 const router = express.Router()
 
@@ -8,7 +9,7 @@ const conversations = new Map()
 
 router.post('/', async (req, res) => {
   try {
-    const { message, sessionId = 'default', mode = 'normal' } = req.body
+    const { message, sessionId = 'default', mode = 'normal', aiProvider = 'gemini' } = req.body
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' })
@@ -27,8 +28,26 @@ router.post('/', async (req, res) => {
     // Get conversation history
     const history = conversations.get(sessionId) || []
 
-    // Get AI response with personality mode
-    const reply = await aiService.chat(message, history, mode)
+    let reply
+
+    // Choose AI provider
+    if (aiProvider === 'openai' && process.env.OPENAI_API_KEY) {
+      // Use OpenAI ChatGPT
+      const messages = [
+        {
+          role: 'system',
+          content: `You are Your-RAA, a helpful AI assistant integrated into MGAI search engine. Be friendly, concise, and helpful.`
+        },
+        ...history,
+        { role: 'user', content: message }
+      ]
+      
+      const response = await openaiService.chat(messages, { maxTokens: 500 })
+      reply = response.message
+    } else {
+      // Use Gemini (default)
+      reply = await aiService.chat(message, history, mode)
+    }
 
     // Update conversation history
     history.push({ role: 'user', content: message })
@@ -41,7 +60,7 @@ router.post('/', async (req, res) => {
     
     conversations.set(sessionId, history)
 
-    res.json({ reply })
+    res.json({ reply, provider: aiProvider })
   } catch (error) {
     console.error('Chat error:', error)
     res.status(500).json({ error: 'Chat failed', message: error.message })

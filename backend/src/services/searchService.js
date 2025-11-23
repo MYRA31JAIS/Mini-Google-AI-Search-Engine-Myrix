@@ -42,14 +42,45 @@ export const searchService = {
         })
 
         const organicResults = response.data.organic_results || []
+        const answerBox = response.data.answer_box
+        const knowledgeGraph = response.data.knowledge_graph
         
         const results = organicResults.slice(0, 10).map((result, index) => ({
           id: String(index + 1),
           title: result.title,
           url: result.link,
           snippet: result.snippet || result.description || 'No description available',
-          source: new URL(result.link).hostname.replace('www.', '')
+          source: new URL(result.link).hostname.replace('www.', ''),
+          // Add rich snippets if available
+          richSnippet: result.rich_snippet?.top || result.rich_snippet?.bottom,
+          rating: result.rating,
+          date: result.date,
+          sitelinks: result.sitelinks
         }))
+        
+        // Add featured snippet/answer box if available
+        if (answerBox) {
+          results.unshift({
+            id: '0',
+            title: answerBox.title || 'Featured Answer',
+            url: answerBox.link || '',
+            snippet: answerBox.answer || answerBox.snippet || '',
+            source: answerBox.displayed_link || 'Google',
+            isFeatured: true,
+            type: answerBox.type
+          })
+        }
+        
+        // Add knowledge graph data
+        if (knowledgeGraph) {
+          results.knowledgeGraph = {
+            title: knowledgeGraph.title,
+            type: knowledgeGraph.type,
+            description: knowledgeGraph.description,
+            image: knowledgeGraph.image,
+            facts: knowledgeGraph.attributes || {}
+          }
+        }
         
         // Cache search results - O(1)
         cacheService.set(cacheKey, results)
@@ -119,6 +150,29 @@ export const searchService = {
     const fallbackUrl = `https://source.unsplash.com/400x300/?${encodeURIComponent(query)}`
     cacheService.set(cacheKey, fallbackUrl)
     return fallbackUrl
+  },
+
+  // Generate AI-powered summary from search results
+  generateSummary: async (query, searchResults) => {
+    try {
+      const topResults = searchResults.slice(0, 5)
+      const context = topResults
+        .map((r, i) => `[${i + 1}] ${r.title}\n${r.snippet}`)
+        .join('\n\n')
+
+      const prompt = `Based on these search results about "${query}", provide a comprehensive, accurate summary in 2-3 paragraphs. Include key facts and cite sources using [1], [2], etc.
+
+Search Results:
+${context}
+
+Summary:`
+
+      const summary = await aiService.generateText(prompt)
+      return summary
+    } catch (error) {
+      console.error('Summary generation error:', error.message)
+      return null
+    }
   },
 
   // Extract entity information for knowledge graph
